@@ -18,20 +18,37 @@ var lastCmd;
 function setup(){
   sp.on('open', () => {
     console.log('port opened')
-    //sp.write( appendCrc16([0x02, 0x08, 0x00, 0x00, 0x12, 0x34]), errLog)  
   })
   sp.on('data', d =>{
     console.log(d)
     inchunks.push(d)
-    //try to verify
-    if(inchunks.length > 1){
-      let packet = Buffer.concat(inchunks)
-      if( packet[1] == 0x08 && packet.slice(1,6).toString('hex') == '0800001234')
-        console.log( `ID: ${packet[0]} respond online [ping].`)
-      else
-        console.log( 'unknown packet: ', packet)
-      inchunks = [] // empty it
+    
+    //attempt to verify packet completeness
+    let packet = Buffer.concat(inchunks)
+    if(packet.length < 5) return;  // shortest packet is error packet, len = 5
+    if(packet[2] - packet[1] == 0x80) //exception packet
+    {
+      console.log(`Exception response ${lastCmd}: `,packet)
+      lastCmd = '';
+      inchunks = [];
+      return
     }
+
+    switch(lastCmd){
+      case 'ping':
+        if(packet.length < 8) return;
+        if(packet.slice(1,6).toString('hex') == '0800001234')
+          console.log( `ID: ${packet[0]} respond online [ping].`)
+        else
+          console.log( 'Warning: unexpected response of ping', packet)
+        break;
+      case 'getAlarm':
+        if(packet.length < 8) return; //wait for remaining data
+        console.log( 'getAlarm returns: ',packet.slice(3, 7))
+        break;
+    }
+    lastCmd = '';
+    inchunks = [] // empty it
   })
 }
 
@@ -44,6 +61,7 @@ function appendCrc16(inb){
   console.log(outb)
   return outb 
 }
+
 function errLog(err){
   if(err)
     console.log(err)
@@ -53,7 +71,7 @@ function mkbuf(str){
   return Buffer.from(str.split(' ').join(''), 'hex')
 }
 
-// REPL commands
+// REPL commands /////////////////////////////////////////////////////////////
 function connect(path){
   sp = new Serialport(path, {
     parity: 'even', //default value of AZD-KX
@@ -66,30 +84,35 @@ function connect(path){
 function ping(id){
   let buf = mkbuf('01 08 00 00 12 34')
   buf[0] = id
+  lastCmd = 'ping'
   sp.write( appendCrc16(buf) , errLog)  
 }
 
 function clearAlarm(id){
   let buf = mkbuf('01 06 01 81 00 01')
   buf[0] = id
+  lastCmd = 'clearAlarm'
   sp.write( appendCrc16( buf ), errLog)  
 }
 
 function getAlarm(id){
   let buf = mkbuf('01 03 00 80 00 02')
   buf[0] = id
+  lastCmd = 'getAlarm'
   sp.write( appendCrc16(buf), errLog)  
 }
 
 function getDetectPos(id){
   let buf = mkbuf('01 03 00 cc 00 02')
   buf[0] = id
+  lastCmd = 'getDetectPos'
   sp.write( appendCrc16(buf), errLog)  
 } 
 
 function getTemperature(id){
   let buf = mkbuf('01 03 00 f8 00 06')
   buf[0] = id
+  lastCmd = 'getTemperature'
   sp.write( appendCrc16(buf), errLog)  
 }
 
@@ -132,4 +155,6 @@ function rotate(id, steps, opts){
       btmp.copy(buf, 7+ 4*6)
     }
   }
+  lastCmd = 'rotate'
+  sp.write( appendCrc16(buf), errLog)  
 }
