@@ -20,7 +20,7 @@ function setup(){
     console.log('port opened')
   })
   sp.on('data', d =>{
-    console.log(d)
+    //console.log(d)
     inchunks.push(d)
     
     //attempt to verify packet completeness
@@ -34,6 +34,7 @@ function setup(){
       return
     }
 
+    let b;
     switch(lastCmd){
       case 'ping':
         if(packet.length < 8) return;
@@ -46,6 +47,21 @@ function setup(){
         if(packet.length < 8) return; //wait for remaining data
         console.log( 'getAlarm returns: ',packet.slice(3, 7))
         break;
+      case 'getDetectPos':
+        if(packet.length < 7) return; //wait for remaining data
+        b = packet.slice(3, 7)
+        console.log( 'pos: ', b.readInt32BE())
+        break;
+      case 'getTemperature':
+        if(packet.length < 15) return; //waith for remaining data
+        b = packet.slice(3, 7)
+        console.log( 'driver temperature: ', b.readInt32BE()/10 + '°C')
+
+        b = packet.slice(7, 11)
+        console.log( 'motor temperature: ', b.readInt32BE()/10 + '°C')
+
+        b = packet.slice(11, 15)
+        console.log( 'odometer: ', b.readInt32BE() * 100 + 'rev')
     }
     lastCmd = '';
     inchunks = [] // empty it
