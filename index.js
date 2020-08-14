@@ -6,7 +6,7 @@ var process = require('process')
 var sp;
 if(process.argv[2]){
   sp = new Serialport(process.artv[2], {
-    parity: 'even', //default value of AZD-KX
+//    parity: 'even', //default value of AZD-KX
     baudRate: 115200,
   })
   setup()
@@ -20,7 +20,7 @@ function setup(){
     console.log('port opened')
   })
   sp.on('data', d =>{
-    //console.log(d)
+    console.log(d)
     inchunks.push(d)
     
     //attempt to verify packet completeness
@@ -68,13 +68,20 @@ function setup(){
   })
 }
 
+function send(mbuf){
+  //sp.write(mbuf);
+  var outstr = mbuf.toString('hex') + '\n';
+  console.log('sending: ' + outstr)
+  sp.write(outstr);
+}
+
 function appendCrc16(inb){
   //inb = Buffer.from(inb)
   let c = crc(inb);
   let crb = Buffer.allocUnsafe(2)
   crb.writeUInt16LE(c)
   var outb = Buffer.concat( [inb, crb] )
-  console.log(outb)
+  //console.log(outb)
   return outb 
 }
 
@@ -90,7 +97,7 @@ function mkbuf(str){
 // REPL commands /////////////////////////////////////////////////////////////
 function connect(path){
   sp = new Serialport(path, {
-    parity: 'even', //default value of AZD-KX
+    //parity: 'even', //default value of AZD-KX
     baudRate: 115200,
   })
   setup();
@@ -101,35 +108,35 @@ function ping(id){
   let buf = mkbuf('01 08 00 00 12 34')
   buf[0] = id
   lastCmd = 'ping'
-  sp.write( appendCrc16(buf) , errLog)  
+  send( appendCrc16(buf) , errLog)  
 }
 
 function clearAlarm(id){
   let buf = mkbuf('01 06 01 81 00 01')
   buf[0] = id
   lastCmd = 'clearAlarm'
-  sp.write( appendCrc16( buf ), errLog)  
+  send( appendCrc16( buf ), errLog)  
 }
 
 function getAlarm(id){
   let buf = mkbuf('01 03 00 80 00 02')
   buf[0] = id
   lastCmd = 'getAlarm'
-  sp.write( appendCrc16(buf), errLog)  
+  send( appendCrc16(buf), errLog)  
 }
 
 function getDetectPos(id){
   let buf = mkbuf('01 03 00 cc 00 02')
   buf[0] = id
   lastCmd = 'getDetectPos'
-  sp.write( appendCrc16(buf), errLog)  
+  send( appendCrc16(buf), errLog)  
 } 
 
 function getTemperature(id){
   let buf = mkbuf('01 03 00 f8 00 06')
   buf[0] = id
   lastCmd = 'getTemperature'
-  sp.write( appendCrc16(buf), errLog)  
+  send( appendCrc16(buf), errLog)  
 }
 
 function rotate(id, steps, opts){
@@ -172,5 +179,5 @@ function rotate(id, steps, opts){
     }
   }
   lastCmd = 'rotate'
-  sp.write( appendCrc16(buf), errLog)  
+  send( appendCrc16(buf), errLog)  
 }
