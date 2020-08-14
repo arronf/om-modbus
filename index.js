@@ -20,7 +20,8 @@ function setup(){
     console.log('port opened')
   })
   sp.on('data', d =>{
-    console.log(d)
+    process.stdout.write(d.toString('ascii'))
+    d = Buffer.from(d.toString('ascii'), 'hex')
     inchunks.push(d)
     
     //attempt to verify packet completeness

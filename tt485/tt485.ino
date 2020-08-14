@@ -12,12 +12,13 @@ void hex2bin(char *instr, char *out){
 }
 
 // convert binary back to hex string
+/*
 void bin2hex(uint8_t *inbuf, int len, uint8_t *res){
   for(int i=0;i<len;i++){
     sprintf(res+i*2, "%02x", inbuf[i]);
   }
   res[len*2] = 0;
-}
+}*/
 
 void setup() {
   Serial.begin(115200);
@@ -33,13 +34,15 @@ char mbibuf[80];   //modbus input buffer
 char mbobuf[80];
 char srbuf[256];  //serial input buffer
 int srptr = 0;
+char bytehex[3];
 
 void loop() {
   if (RS485.available()) {
     int ch = RS485.read();
     //sprintf(mbibuf, "%x ", ch);
-    Serial.print("[485]: ");
-    Serial.println(ch);
+    sprintf(bytehex, "%02x", ch);
+    bytehex[2] = 0;
+    Serial.print(bytehex);
   }
   
   if(Serial.available() > 0){
@@ -47,6 +50,7 @@ void loop() {
     if(inb == 0xa || inb == 0xd){
       srbuf[srptr] = 0x0;
       srptr = 0;
+      Serial.println();
       Serial.print("start relaying packet: ");
       Serial.print(srbuf);
       Serial.println();
