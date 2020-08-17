@@ -48,7 +48,7 @@ function setup(){
         if(packet.length < 8) return; //wait for remaining data
         console.log( 'getAlarm returns: ',packet.slice(3, 7))
         break;
-      case 'getDetectPos':
+      case 'getPos':
         if(packet.length < 7) return; //wait for remaining data
         b = packet.slice(3, 7)
         console.log( 'pos: ', b.readInt32BE())
@@ -126,10 +126,10 @@ function getAlarm(id){
   send( appendCrc16(buf), errLog)  
 }
 
-function getDetectPos(id){
+function getPos(id){
   let buf = mkbuf('01 03 00 cc 00 02')
   buf[0] = id
-  lastCmd = 'getDetectPos'
+  lastCmd = 'getPos'
   send( appendCrc16(buf), errLog)  
 } 
 

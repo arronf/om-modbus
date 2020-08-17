@@ -24,8 +24,10 @@ void setup() {
   Serial.begin(115200);
   while (!Serial);
 
-  RS485.begin(115200);
-
+  //RS485.begin(115200);
+  // OM motor's default setting
+  RS485.begin(115200, SERIAL_8E1);
+  
   // enable reception, can be disabled with: RS485.noReceive();
   RS485.receive();
 }
