@@ -15,6 +15,9 @@ if(process.argv[2]){
 var inchunks = []
 var lastCmd;
 
+function list(){
+  Serialport.list().then( r => console.log(r) )
+}
 function setup(){
   sp.on('open', () => {
     console.log('port opened')
